@@ -2,6 +2,7 @@
 from  dpark import DparkContext
 import re
 import os
+import sys
 
 CTX=DparkContext()
 def init(pv_file_files):
@@ -118,7 +119,10 @@ def load_relative_dict(dict_path):
 
 
 def get_relative_words(relative_dict, keyword):
-    list = relative_dict.groupByKey().lookup(keyword)[0]
+    list = []
+    data = relative_dict.groupByKey().lookup(keyword)
+    if data:
+        list = data[0]
     list.append(keyword)
     return list
   
@@ -145,12 +149,20 @@ def generate_duration_file(pv_dict_path, topic_group_dict, group_tags_dict, save
     join_improve(group_count, group_tags).map(fix_tags_count).saveAsTextFile(save_path)
     
 
+def compute_keywords_pv(keyword, 
+        relative_path = '/home/ybw_intern/tag_top/threshold_test',
+        pv_files = '/home/ybw_intern/tag_top/final_rdd'):
+    relative_dict = load_relative_dict(relative_path)
+    pv_data = init(get_dict_files('/home/ybw_intern/tag_top/final_rdd'))
+    relative_list = get_relative_words(relative_dict, keyword)
+    pv_result = 0
+    for word in relative_list:
+        pv_result += int(compute_keyword_pv(pv_data,word))
+    return pv_result
+
+    
+    
+
+
 if __name__ == "__main__":
-    relative_dict = load_relative_dict('/home/ybw_intern/tag_top/threshold_test')
-    key_list = get_relative_words(relative_dict, '星座')
-    result = 0
-    for word in key_list:
-        result += int(compute_keyword_pv(init(get_dict_files('/home/ybw_intern/tag_top/final_rdd')), word))
-    print result
-    
-    
+    print compute_keywords_pv(sys.argv[1])
