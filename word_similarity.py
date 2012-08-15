@@ -1,5 +1,6 @@
 #-*- coding:utf-8 -*-
 from group_pv import init, get_dict_files, CTX
+import sys
 
 
 def function_stat(func):
@@ -212,9 +213,13 @@ def estimate_threshold(combined_rd, t):
     return  combined_rd.map(_threshold)\
     .filter(lambda x: x[1]).map(_format_cos).saveAsTextFile('threshold_test')
     
-   
+
+def output_relative_words(save_path = 'threshold_test', threshold = 0.005):
+    standard_word_count(tags_data2)
+    combined_rd = Combine(standard_tuple_count(tags_data) ,tags_count)
+    estimate_threshold(combined_rd, threshold)
 if __name__ == '__main__':
-    print standard_word_count(tags_data2)
-    combined_rd = Combine(standard_tuple_count(tags_data), tags_count)
-    print estimate_threshold(combined_rd, 0.005)
+    output_relative_words()
+    print ' ok!'
+    
 
