@@ -15,14 +15,17 @@ def init(pv_file_files):
     return raw_rdd
 
 
+def _1test(line):
+    return (int(line.strip().split(' ')[0]),int(line.strip().split(' ')[1]))
 def get_topic_group_dict(topic_group_files):
     '''
     获取topic_group 映射rdd
     '''
     print "----in----"
-    return init(topic_group_files).\
-    map(lambda line: (int(line.strip().split(" ")[0]),
-        int(line.strip().split(" ")[1])))
+    print topic_group_files
+    return init(topic_group_files).map(_1test)
+    #map(lambda line: (int(line.strip().split(" ")[0]),
+    #    int(line.strip().split(" ")[1])))
     
 
 def filter_url(key_value):
@@ -74,8 +77,9 @@ def get_group_tags(group_tags_files):
     '''
     raw_rdd = init(group_tags_files)
     return raw_rdd\
-    .map(lambda line: (int(line.split(':')[0]), line.split(':')[1]))
-
+    .map(lambda line: (int(line.strip().split(':')[0]),
+        line.strip().split(':')[1]))
+#!
 
 def get_group_count(pv_files, topic_group_files):
     '''
@@ -100,9 +104,9 @@ def fix_tags_count(line):
     try:
         int(line[1][1])
     except:
-        return ('%s:%s %s') % (line[0], line[1][0], line[1][1])
+        return ('%s:%d %s') % (line[0], int(line[1][0]), line[1][1])
     else:
-        return ('%s:%s %s') % (line[0], line[1][1], line[1][0])
+        return ('%s:%d %s') % (line[0], int(line[1][1]), line[1][0])
 
 
 def get_dict_files(dict_path):
@@ -127,11 +131,20 @@ def get_relative_words(relative_dict, keyword):
     return list
   
 
-def compute_keyword_pv(group_count_tags, keyword):
+def _filter_tags(line) :
+    try:
+        return keyword in line.split(':')[1].split(' ')[1].split(',')
+    except IndexError:
+        print line
+
+
+def compute_keyword_pv(group_count_tags, query_tag):
     '''
     计算关键字pv
     '''
-    pv = group_count_tags.filter(lambda line: line.split(':')[1].split(' ')[1].find(keyword) > -1)\
+    global keyword
+    keyword = query_tag
+    pv = group_count_tags.filter(_filter_tags)\
             .map(lambda line: line.split(':')[1].split(' ')[0])\
             .reduce(lambda x, y: int(x) + int(y))
     if pv:
@@ -146,14 +159,16 @@ def generate_duration_file(pv_dict_path, topic_group_dict, group_tags_dict, save
     '''
     group_count = get_group_count(get_dict_files(pv_dict_path), get_dict_files(topic_group_dict))
     group_tags = get_group_tags(get_dict_files(group_tags_dict))
+    print "!!!!"
+    print group_tags.take(10)
     join_improve(group_count, group_tags).map(fix_tags_count).saveAsTextFile(save_path)
     
 
 def compute_keywords_pv(keyword, 
         relative_path = '/home/ybw_intern/tag_top/threshold_test',
-        pv_files = '/home/ybw_intern/tag_top/final_rdd'):
+        pv_files = '/home/ybw_intern/tag_top/ryan'):
     relative_dict = load_relative_dict(relative_path)
-    pv_data = init(get_dict_files('/home/ybw_intern/tag_top/final_rdd'))
+    pv_data = init(get_dict_files('/home/ybw_intern/tag_top/ryan'))
     relative_list = get_relative_words(relative_dict, keyword)
     pv_result = 0
     for word in relative_list:
@@ -165,4 +180,9 @@ def compute_keywords_pv(keyword,
 
 
 if __name__ == "__main__":
+    '''
+    generate_duration_file('/home/ybw_intern/tag_top/pv_dir',
+            '/home/ybw_intern/tag_top/topic_group_dir',
+            '/home/ybw_intern/tag_top/test1', 'ryan')
+    '''
     print compute_keywords_pv(sys.argv[1])

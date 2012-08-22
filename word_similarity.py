@@ -2,17 +2,6 @@
 from group_pv import init, get_dict_files, CTX
 import sys
 
-
-def function_stat(func):
-    print '=====I am working %s=====' % func.__name__
-
-    def _(*arg, **kwargs):
-        return func(*arg, **kwargs)
-
-    print '=====I have finished work!%s=====' % func.__name__
-    return _
-
-
 def load_tags(dict_path):
     '''
     读取tags文件
@@ -53,20 +42,39 @@ def _simple_divide2(line):
             int(line.strip().split(':')[1]))
 
 
+def _format_tags(line):
+    return (line.strip().split(':')[0],_simple_divide(line))
+
 
 #level 0
 def extract_tags(group_tags, extract_func):
     return group_tags.map(extract_func)
 
-
+#字数统计所需
 tags_data2 = extract_tags(load_tags('/home/ybw_intern/tag_top/_group_tags'),
         _divide_zip)
+
+#基本统计所需
 tags_data = extract_tags(load_tags('/home/ybw_intern/tag_top/_group_tags'),
         _simple_divide)
+
+#格式化小组标签所需
+group_tag = extract_tags(load_tags('/home/ybw_intern/tag_top/_group_tags'),
+        _format_tags)
+
+#字数统计结果
 tags_count = extract_tags(load_tags('/home/ybw_intern/tag_top/_word_count'),
         _simple_divide2).filter(lambda line:int(line[1])>1)
 
+def _string(line):
+    tag_list_str = ''
+    for tag in line[1]:
+        tag_list_str = tag_list_str+'%s,' % tag
+    return '%s:%s' % (line[0], tag_list_str[:-1])
 
+def save_formated_tags(rdd = group_tag, savepath = 'test1'):
+    rdd.map(_string).saveAsTextFile(savepath)
+    
 #level 0
 def _merge(line1, line2):
     line1.extend(line2)
@@ -138,9 +146,9 @@ def _format_count(line):
     return '%s:%d' % line
 
 
-def standard_word_count(extrated_data):
+def standard_word_count(extrated_data = tags_data2, save_path = '_word_count'):
     return reduce_merged_rdd(merge_tags_rdd(extrated_data))\
-    .map(_format_count).saveAsTextFile('_word_count')
+    .map(_format_count).saveAsTextFile(save_path)
 
 
 def _cartesian_plus(line):
@@ -207,19 +215,22 @@ def _threshold(line):
     return (line[0], [_alter for _alter in line[1] if _alter[1] > threhold])
 
 
-def estimate_threshold(combined_rd, t):
+def estimate_threshold(combined_rd, t,save_path):
     global threhold
     threhold = t
     return  combined_rd.map(_threshold)\
-    .filter(lambda x: x[1]).map(_format_cos).saveAsTextFile('threshold_test')
+    .filter(lambda x: x[1]).map(_format_cos).saveAsTextFile(save_path)
     
 
-def output_relative_words(save_path = 'threshold_test', threshold = 0.005):
+def output_relative_words(save_path, threshold = 0.005):
     standard_word_count(tags_data2)
     combined_rd = Combine(standard_tuple_count(tags_data) ,tags_count)
-    estimate_threshold(combined_rd, threshold)
+    estimate_threshold(combined_rd, threshold, save_path)
+
+    
 if __name__ == '__main__':
-    output_relative_words()
+    output_relative_words(save_path = 'threshold_test')
+    save_formated_tags()
     print ' ok!'
     
 
