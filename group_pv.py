@@ -159,8 +159,6 @@ def generate_duration_file(pv_dict_path, topic_group_dict, group_tags_dict, save
     '''
     group_count = get_group_count(get_dict_files(pv_dict_path), get_dict_files(topic_group_dict))
     group_tags = get_group_tags(get_dict_files(group_tags_dict))
-    print "!!!!"
-    print group_tags.take(10)
     join_improve(group_count, group_tags).map(fix_tags_count).saveAsTextFile(save_path)
     
 
@@ -168,12 +166,15 @@ def compute_keywords_pv(keyword,
         relative_path = '/home/ybw_intern/tag_top/threshold_test',
         pv_files = '/home/ybw_intern/tag_top/ryan'):
     relative_dict = load_relative_dict(relative_path)
-    pv_data = init(get_dict_files('/home/ybw_intern/tag_top/ryan'))
+    pv_data = init(get_dict_files(pv_files))
     relative_list = get_relative_words(relative_dict, keyword)
     pv_result = 0
+    words_dict = {}
     for word in relative_list:
-        pv_result += int(compute_keyword_pv(pv_data,word))
-    return pv_result
+        word_pv = int(compute_keyword_pv(pv_data, word))
+        words_dict[word] = word_pv      
+        pv_result += word_pv
+    return {'total': pv_result, 'words_pv': words_dict}
 
     
     
@@ -185,4 +186,4 @@ if __name__ == "__main__":
             '/home/ybw_intern/tag_top/topic_group_dir',
             '/home/ybw_intern/tag_top/test1', 'ryan')
     '''
-    print compute_keywords_pv(sys.argv[1])
+    print compute_keywords_pv(keyword = sys.argv[1])

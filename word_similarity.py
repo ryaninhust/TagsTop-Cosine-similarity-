@@ -229,7 +229,8 @@ def output_relative_words(save_path, threshold = 0.005):
 
     
 if __name__ == '__main__':
-    output_relative_words(save_path = 'threshold_test')
+    standard_word_count()
+    output_relative_words(save_path = 'threshold_test', threshold = 0.006)
     save_formated_tags()
     print ' ok!'
     
